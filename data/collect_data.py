@@ -1,6 +1,7 @@
 import os
 import random
 import time
+
 from collections import defaultdict, deque
 
 import h5py
@@ -20,7 +21,9 @@ from data.utils import convert_keypoints, keypoint_discovery
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string("save_path", "./data/keypoint/", "Where to save the demos.")
+flags.DEFINE_string(
+    "save_path", os.path.expandvars("$DATASET/instructrl/"), "Where to save the demos."
+)
 flags.DEFINE_list(
     "tasks",
     [
