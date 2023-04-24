@@ -152,8 +152,6 @@ def collect_data(
     for key in TO_BE_REMOVED:
         keys.remove(key)
 
-    total_data = defaultdict(list)
-
     var_target = task_env.variation_count()
     if FLAGS.variations >= 0:
         var_target = np.minimum(FLAGS.variations, var_target)
@@ -289,7 +287,9 @@ def collect_data(
                             stack[k].append(v)
 
                     for k in keys:
-                        total_data[k].append(np.stack(stack[k]))
+                        partial_data = np.stack(stack[k])
+                        v_shape, v_dtype = get_shape_dtype(k, dummy_timestep)
+                        h5_file[k][total_timestep : total_timestep + 1] = partial_data
 
                     total_timestep += 1
                 break
@@ -303,8 +303,6 @@ def collect_data(
     for k in keys:
 
         v_shape, v_dtype = get_shape_dtype(k, dummy_timestep)
-
-        h5_file[k][:total_timestep] = np.array(total_data[k])
 
         h5_file[k].resize((total_timestep, FLAGS.num_frames, *v_shape))
         h5_file_shuffled[k].resize((total_timestep, FLAGS.num_frames, *v_shape))
