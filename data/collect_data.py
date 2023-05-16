@@ -40,13 +40,13 @@ flags.DEFINE_list(
 )
 flags.DEFINE_list("image_size", [256, 256], "The size of the images tp save.")
 flags.DEFINE_integer(
-    "train_episodes_per_task", 10, "The number of episodes to collect per task."
+    "train_episodes_per_task", 2, "The number of episodes to collect per task."
 )
 flags.DEFINE_integer(
     "val_episodes_per_task", 1, "The number of episodes to collect per task."
 )
 flags.DEFINE_integer(
-    "variations", -1, "Number of variations to collect per task. -1 for all."
+    "variations", 1, "Number of variations to collect per task. -1 for all."
 )
 flags.DEFINE_integer("num_frames", 4, "Number of frames to stack.")
 flags.DEFINE_integer("vox_size", 16, "Voxel size to discretize translation.")

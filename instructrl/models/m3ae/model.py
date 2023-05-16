@@ -82,13 +82,13 @@ def extract_patches(inputs, patch_size):
     height, width = height // patch_size, width // patch_size
     x = jnp.reshape(inputs, (batch, height, patch_size, width, patch_size, channels))
     x = jnp.swapaxes(x, 2, 3)
-    x = jnp.reshape(x, (batch, height * width, patch_size**2 * channels))
+    x = jnp.reshape(x, (batch, height * width, patch_size ** 2 * channels))
     return x
 
 
 def merge_patches(inputs, patch_size):
     batch, length, _ = inputs.shape
-    height = width = int(length**0.5)
+    height = width = int(length ** 0.5)
     x = jnp.reshape(inputs, (batch, height, width, patch_size, patch_size, -1))
     x = jnp.swapaxes(x, 2, 3)
     x = jnp.reshape(x, (batch, height * patch_size, width * patch_size, -1))
@@ -99,7 +99,7 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     assert embed_dim % 2 == 0
     omega = jnp.arange(embed_dim // 2, dtype=jnp.float32)
     omega /= embed_dim / 2.0
-    omega = 1.0 / 10000**omega  # (D/2,)
+    omega = 1.0 / 10000 ** omega  # (D/2,)
 
     pos = pos.reshape(-1)  # (M,)
     out = jnp.einsum("m,d->md", pos, omega)  # (M, D/2), outer product
@@ -121,7 +121,7 @@ def get_1d_sincos_pos_embed(embed_dim, length):
 
 
 def get_2d_sincos_pos_embed(embed_dim, length):
-    grid_size = int(length**0.5)
+    grid_size = int(length ** 0.5)
     assert grid_size * grid_size == length
 
     def get_2d_sincos_pos_embed_from_grid(embed_dim, grid):
@@ -263,6 +263,7 @@ class Attention(nn.Module):
             attention = jnp.where(padding_mask > 0, jnp.array(-1e7), attention)
 
         attention = nn.softmax(attention, axis=-1)
+        # self.sow('intermediates', 'attention', attention) # InstructRL Removed
         attention = nn.Dropout(self.att_drop)(attention, deterministic)
 
         x = (attention @ v).swapaxes(1, 2).reshape(batch, n, channels)
@@ -320,8 +321,9 @@ class Transformer(nn.Module):
                 self.drop_path,
             )(x, deterministic, padding_mask)
 
-            # InstructRL
-            self.sow("intermediates", "intermediate_layer_%d" % _, x)
+            self.sow(
+                "intermediates", "intermediate_layer_%d" % _, x
+            )  # InstructRL added
 
         x = nn.LayerNorm()(x)
         return x
@@ -336,7 +338,7 @@ class MaskedMultimodalAutoencoder(nn.Module):
     @nn.nowrap
     def get_default_config(updates=None):
         config = ConfigDict()
-        config.model_type = "base"  # config_dict.placeholder(str)
+        config.model_type = "base"  # config_dict.placeholder(str) InstructRL
         config.emb_dim = 1024
         config.dec_emb_dim = 512
         config.depth = 24
@@ -379,6 +381,7 @@ class MaskedMultimodalAutoencoder(nn.Module):
             "image_mask_embedding",
             "text_mask_embedding",
             "text_embedding",
+            # 'decoder_image_type_embedding', 'decoder_text_type_embedding', 'bias', 'embedding' # Removed InstructRL
         ]
         return no_decay
 
@@ -506,7 +509,9 @@ class MaskedMultimodalAutoencoder(nn.Module):
             )
 
         if text is not None:
+            # text = jnp.transpose(text, (0, 2, 1))
             text_x = (
+                # jnp.transpose(self.text_embedding(text), (0, 2, 1, 3))
                 self.text_embedding(text)
                 + get_1d_sincos_pos_embed(self.config.emb_dim, text.shape[1])
                 + self.get_type_embedding("encoder_text_type_embedding")
@@ -749,6 +754,7 @@ class MaskedAutoencoder(nn.Module):
             "cls_token",
             "encoder_image_type_embedding",
             "image_mask_embedding",
+            # "bias", # Removed InstructRL
         ]
         return no_decay
 
@@ -1030,10 +1036,20 @@ def load_checkpoint(path):
     return data
 
 
+# def load_m3ae_model_vars(model_name):
+#     CHECKPOINTS = {
+#         "vit_b16": "gs://instruct-rl/m3ae/vit_b16.pkl",
+#         "vit_l16": None,  # TODO: add checkpoint
+#     }
+#     checkpoint_data = load_checkpoint(CHECKPOINTS[model_name])
+#     checkpoint_params = checkpoint_data["state"].params
+#     return checkpoint_params
+
+
 def load_m3ae_model_vars(model_name):
     CHECKPOINTS = {
-        "vit_b16": "gs://instruct-rl/m3ae/vit_b16.pkl",
-        "vit_l16": None,  # TODO: add checkpoint
+        "vit_b16": "/gpfswork/rech/pvn/uqn73qm/m3ae_models/m3ae_base.pkl",
+        "vit_l16": "/gpfswork/rech/pvn/uqn73qm/m3ae_models/m3ae_large.pkl",
     }
     checkpoint_data = load_checkpoint(CHECKPOINTS[model_name])
     checkpoint_params = checkpoint_data["state"].params

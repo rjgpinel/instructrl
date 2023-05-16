@@ -112,7 +112,7 @@ class WandBLogger(object):
         config.online = False
         config.prefix = "instructrl"
         config.project = "instructrl"
-        config.output_dir = "/tmp/instructrl"
+        config.output_dir = "/gpfswork/rech/pvn/uqn73qm/instructrl"
         config.gcs_output_dir = ""
         config.random_delay = 0.0
         config.experiment_id = config_dict.placeholder(str)
